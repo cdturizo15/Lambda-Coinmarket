@@ -134,6 +134,7 @@ se define la conexion de la base de datos, el cursor y la api key a utilizar.
 Se llama a la funcion para obtener la informacion de la api de coinmarketcap, luego
 llama a la funcion para hacer la insercion en la base de datos. En el caso que la api 
 no retorne un json se hace un print. Por ultimo se ciera el cursor y la conexion a la base de datos
+
 ```
 def lambda_handler(event, execution):
     mydb = mysql.connector.connect(
@@ -151,6 +152,7 @@ def lambda_handler(event, execution):
     else:
         print("No se recibieron datos de la API.")
     mycursor.close()
+    mydb.close()
 ```
 
 ##EventBridge
@@ -159,7 +161,7 @@ para ello debi crear un desencadenador que tuviera la periodicidad en mi caso us
 y asociarlo a mi funcion lambda
 
 
-    mydb.close()
+    
 
-```
+
 
