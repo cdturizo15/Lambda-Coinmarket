@@ -64,7 +64,7 @@ CREATE TABLE coin_prices (
 )
 ```
 
-##Funcion Lambda
+## Funcion Lambda
 
 Inicialmente se importan las librerias anteriormente mencionadas y adicionalmente json, datetime y OS con el 
 objetivo de manejar la respuesta json de la peticion a la api, el formato de la fecha y las variables de entorno respectivamente
@@ -155,7 +155,7 @@ def lambda_handler(event, execution):
     mydb.close()
 ```
 
-##EventBridge
+## EventBridge
 Amazon EventBridge es el servicio que he utilizado para ejecutar periodicamente mi funcion lambda
 para ello debi crear un desencadenador que tuviera la periodicidad en mi caso use rate(6 hours)
 y asociarlo a mi funcion lambda
