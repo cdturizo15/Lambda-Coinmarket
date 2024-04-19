@@ -52,7 +52,9 @@ def lambda_handler(event, execution):
     mycursor = mydb.cursor()
     api_key = os.environ['api_key']
     data = get_coin_price(api_key)
-    if data:
+    if data is not None:
         insert_db(mycursor, mydb, data)
+    else:
+        print("No se recibieron datos de la API.")
     mycursor.close()
     mydb.close()
