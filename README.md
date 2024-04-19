@@ -151,6 +151,14 @@ def lambda_handler(event, execution):
     else:
         print("No se recibieron datos de la API.")
     mycursor.close()
+```
+
+##EventBridge
+Amazon EventBridge es el servicio que he utilizado para ejecutar periodicamente mi funcion lambda
+para ello debi crear un desencadenador que tuviera la periodicidad en mi caso use rate(6 hours)
+y asociarlo a mi funcion lambda
+
+
     mydb.close()
 
 ```
