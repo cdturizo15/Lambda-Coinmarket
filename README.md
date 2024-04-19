@@ -76,25 +76,14 @@ from datetime import datetime
 import os
 ```
 
-lambda_handler es la funcion que ejecuta lambda,
-al principio se define la conexion a la base de datos y la url para hacer la peticion. 
-El endpoint a utilizar de la api  es 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
-que nos devuelve la informacion mas actualizada de las monedas que filtremos segun los parametro.
-En los headers tenemos la api_key de coinmakertcap y en los parametros las monedas de las cuales 
-necesitamos la informacion. El parametro slug filtra por nombre las monedas, de igual forma es posible filtrar por el parametro id o symbol.
+Se crea la funcion get_coin_price que recibe la api_key como parametro,
+se define la url a la que se hara la peticion 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest',
+esta trae informacion actualizada de las monedas seleccionadas, se pueden filtrar por los parametros id, slug y symbol. En este
+caso usamos slug para filtra ethereum y bitcoin. Se tiene un bloque try catch en para manejar la peticion en caso de fallo.
 
 ```
-def lambda_handler(event, execution):
-    mydb = mysql.connector.connect(
-    host=str(os.environ['endpoint_db']),
-    user=str(os.environ['user_db']),
-    password=str(os.environ['pass_db']),
-    database=str(os.environ['db_name'])
-    )
-
-    mycursor = mydb.cursor()
+def get_coin_price(api_key):
     url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
-    api_key = os.environ['api_key']
     parameters = {
         'slug':'bitcoin,ethereum'
     }
@@ -106,38 +95,63 @@ def lambda_handler(event, execution):
     url += '?' + urllib.parse.urlencode(parameters)
     req = urllib.request.Request(url, headers=headers)
 
-```
-Por ultimo tenemos el bloque try catch que intenta hacer la peticion y posteriormente insertar los 
-resultados en la tabla coin_prices. Es posible ver que se tiene un print para ver la data que recibe de la api.
-En el ciclo for se obtiene las variables a insertar en la base de datos y se obtienen desglosando el json que retorna la API.
-Cabe mencionar que la fecha de coinmarketcap viene en formato iso 8061 y en el codigo se modifica para que sea compatible con el tipo datetime 
-de sql.
-
-```
-try:
+    try:
         response = urllib.request.urlopen(req)
         data = json.loads(response.read().decode('utf-8'))
         print(json.dumps(data, indent=4))
-        for attr, value in  data['data'].items():     
-            id_name = str(attr)
-            name = value['name']
-            coin_price = value['quote']['USD']['price'] 
-            date_iso = value['last_updated'] 
-            date_iso = date_iso.replace('T', ' ').replace('Z', '')[:-4]
-            iso_datetime = datetime.fromisoformat(date_iso)
-            date_price = iso_datetime.strftime('%Y-%m-%d %H:%M:%S')
-            sql = f"INSERT INTO coin_prices (id_coin, name, price, date_price) VALUES (%s, %s, %s, %s)"
-            val = (id_name, name, coin_price, date_price)
-            mycursor.execute(sql, val)
-            mydb.commit()
-            print(mycursor.rowcount, "record inserted.")
-        mycursor.close()
-        mydb.close()
-
+        return data['data']
     except Exception as e:
-        print('Error al hacer la solicitud:', e)
+        print('Error al hacer la solicitud a la API:', e)
+        return None
+
 
 ```
+Se define la funcion insert_db recibiendo como parametros el objeto cursor de la base de datos,
+la conexion a la base de datos y la data recibida por la api de coinmarketcap. Dentro de la funcion
+se hace un ciclo sobre el objeto recibido por la api y se obtiene la informacion como el id de la moneda, 
+el nombre, precio y la fecha. Podemos notar como se modifica la fecha de formato iso 8061 al formato datetime
+para la insercion sql. Por ultimo se hace la insercion usando el cursor y se hace el commit a la base de datos.
 
+```
+def insert_db(mycursor, mydb, data):
+    for attr, value in  data.items():     
+        id_name = str(attr)
+        name = value['name']
+        coin_price = value['quote']['USD']['price'] 
+        date_iso = value['last_updated'] 
+        date_iso = date_iso.replace('T', ' ').replace('Z', '')[:-4]
+        iso_datetime = datetime.fromisoformat(date_iso)
+        date_price = iso_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        sql = f"INSERT INTO coin_prices (id_coin, name, price, date_price) VALUES (%s, %s, %s, %s)"
+        val = (id_name, name, coin_price, date_price)
+        mycursor.execute(sql, val)
+        mydb.commit()
+        print(mycursor.rowcount, "record inserted.")
+```
 
+Por ultimo en la funcion lambda_handler(la ejecutada por lambda)
+se define la conexion de la base de datos, el cursor y la api key a utilizar.
+Se llama a la funcion para obtener la informacion de la api de coinmarketcap, luego
+llama a la funcion para hacer la insercion en la base de datos. En el caso que la api 
+no retorne un json se hace un print. Por ultimo se ciera el cursor y la conexion a la base de datos
+```
+def lambda_handler(event, execution):
+    mydb = mysql.connector.connect(
+        host=str(os.environ['endpoint_db']),
+        user=str(os.environ['user_db']),
+        password=str(os.environ['pass_db']),
+        database=str(os.environ['db_name'])
+    )
+
+    mycursor = mydb.cursor()
+    api_key = os.environ['api_key']
+    data = get_coin_price(api_key)
+    if data not None:
+        insert_db(mycursor, mydb, data)
+    else:
+        print("No se recibieron datos de la API.")
+    mycursor.close()
+    mydb.close()
+
+```
 
