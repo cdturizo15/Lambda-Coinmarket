@@ -1,13 +1,13 @@
 # Lambda-Coinmarket
 Una funcion que extrae informacion del precio de bitcoin y ethereum para insertarlo en una base de datos. Esta funcion tiene la intencion de ser una funcion lambda de AWS
-## Dependencies
+## Dependencias
 
 - urllib3
 - mysqlconnector
 
 La funcion necesita de estas librerias para funcionar correctamente
 
-## Installation
+## Instalacion
 
 ```sh
 pip install urllib3==1.26.6
@@ -36,7 +36,7 @@ Capa para dependencias:
 Estructura de cargas para dependencias:
 <img title="a title" alt="Alt text" src="/dep-structure.png">
 
-##Conexion RDS y Lambda
+## Conexion RDS y Lambda
 
 Para la conexion de la RDS y Lambda he creado una VPC con subredes publicas y privadas
 y he colocado la funcion lambda y la RDS en la misma VPC para que puedan conectarse sin problemas.
