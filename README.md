@@ -28,4 +28,4 @@ pip mysql-connector-python
 
 To upload to lambda and work correctly is neccesary to attach the dependencies with the function. Lambda has a limit of 10mb per .zip uploaded, but with lambda layers we can upload dependencies and still edit our function from the lambda console.
 
-
+<img title="a title" alt="Alt text" src="/lambda_function.png">
